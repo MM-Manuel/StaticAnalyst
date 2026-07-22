@@ -1,4 +1,5 @@
 import hashlib
+import requests
 import tkinter as tk
 from tkinter import filedialog
 
@@ -18,9 +19,17 @@ def main():
     )
 
     if filepath:
-        print(f"Selected file path: {filepath}")
-        print(f"File hash:{compute_file_hash(filepath)}")
-
+        print(f"Selected file path: {filepath}\n")
+        file_hash = compute_file_hash(filepath)
+        print(f"File hash: {file_hash}\n")
+        vt_key = input("If you want a VirusTotal filehash analysis paste your API and press enter, if not, leave empty and press enter. \n" \
+        "If you don't know what a VirusTotal API key is or how to get it go to readme.md \n" \
+        "Enter your API Key: ").strip()
+        if vt_key:
+            print(" [+] Connecting to VirusTotal...")
+            Virustotal_hash_analysis(file_hash, vt_key)
+        else:
+            print(" [-] VirusTotal analysis skipped.")
     else:
         print("Analysis cancelled: no file selected.")
 
@@ -40,6 +49,35 @@ def compute_file_hash(filepath, algorithm='sha256'):
 
     # Return the final hash value as a hexadecimal string
     return hash_func.hexdigest()
+
+#This method uses VirusTotal's public api to cross reference the file hash and give a report based on it
+def Virustotal_hash_analysis(hash, api_key):
+    url = f"https://www.virustotal.com/api/v3/files/{hash}"
+    headers = {"accept": "application/json", "x-apikey": api_key}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        deserialized_vt_response = response.json()
+        # This is just the most important data of the VirusTotal api response
+        stats = deserialized_vt_response["data"]["attributes"]["last_analysis_stats"]
+        print("\n" + "="*40)
+        print("VIRUSTOTAL REPORT")
+        print("="*40)
+        print(f"\033[91mEngines that flag it as malware: {stats['malicious']}\033[0m")
+        print(f"\033[92mEngines that flag it as safe: {stats['undetected']}\033[0m")
+        print(f"\033[93mEngines that flag it as suspecious: {stats['suspicious']}\033[0m")
+        print("="*40 + "\n")
+
+    elif response.status_code == 404:
+        print("\n[-] The file is so new that VirusTotal doesn't have it in its database yet.")
+
+    elif response.status_code == 401:
+        print("\n[-] Error: Your VirusTotal API Key is invalid or has expired.")
+
+    else:
+        print(f"\n[-] An unexpected error occurred. HTTP Code: {response.status_code}")
+
+    
+
 
 if __name__ == "__main__":
     main()
