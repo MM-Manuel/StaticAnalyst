@@ -1,7 +1,8 @@
 import hashlib
-import requests
 import tkinter as tk
 from tkinter import filedialog
+
+import requests
 
 
 def main():
@@ -30,6 +31,11 @@ def main():
             Virustotal_hash_analysis(file_hash, vt_key)
         else:
             print(" [-] VirusTotal analysis skipped.")
+        print("\n" + "="*40)
+        print("Static analysis staring...\n")
+        print(text_extractor(filepath))
+        
+
     else:
         print("Analysis cancelled: no file selected.")
 
@@ -62,9 +68,10 @@ def Virustotal_hash_analysis(hash, api_key):
         print("\n" + "="*40)
         print("VIRUSTOTAL REPORT")
         print("="*40)
+        # \033[91m is red text, \033[93m yellow, \033[92m green and \033[0m is to take it back to normal
         print(f"\033[91mEngines that flag it as malware: {stats['malicious']}\033[0m")
-        print(f"\033[92mEngines that flag it as safe: {stats['undetected']}\033[0m")
         print(f"\033[93mEngines that flag it as suspecious: {stats['suspicious']}\033[0m")
+        print(f"\033[92mEngines that flag it as safe: {stats['undetected']}\033[0m")
         print("="*40 + "\n")
 
     elif response.status_code == 404:
@@ -75,6 +82,30 @@ def Virustotal_hash_analysis(hash, api_key):
 
     else:
         print(f"\n[-] An unexpected error occurred. HTTP Code: {response.status_code}")
+
+def text_extractor(filepath):
+
+    extracted_tmp = ""
+    extracted_text = ""
+
+    # Read file in binary mode
+    with open(filepath, 'rb') as file:
+        # Divide the file in 8Kb chunks
+        while chunk := file.read(8192):
+            for byte in chunk:
+                # This checks if a byte is an ascii printable character to avoid
+                # unnecesary checks and errors in weird invisible chararacters
+                if(32 <= byte <= 126):
+                    extracted_tmp += chr(byte)
+                else:
+                    # If the current set of chars is less than 4 chars long is probably irrelevant
+                    if(len(extracted_tmp) < 4):
+                        extracted_tmp = ""
+                    else:
+                        extracted_text += extracted_tmp + "\n"
+                        extracted_tmp = ""                
+        return extracted_text
+
 
     
 
