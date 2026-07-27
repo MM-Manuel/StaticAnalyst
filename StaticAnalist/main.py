@@ -17,7 +17,7 @@ def main():
     print("\nOpening file selection screen...")
     # Launch the file selector
     filepath = filedialog.askopenfilename(
-        title="Select the suspecious file",
+        title="Select the suspicious file",
         filetypes=[("PE files", "*.exe *.dll"), ("All files", "*.*")] 
     )
 
@@ -38,7 +38,6 @@ def main():
         print("\nStatic analysis starting...\n")
         extracted_text = text_extractor(filepath)
         regex_analysis(extracted_text)
-        
 
     else:
         print("Analysis cancelled: no file selected.")
@@ -73,9 +72,9 @@ def Virustotal_hash_analysis(hash, api_key):
         print("VIRUSTOTAL REPORT")
         print("="*40)
         # \033[91m is red text, \033[93m yellow, \033[92m green and \033[0m is to take it back to normal
-        print(f"\033[91mEngines that flag it as malware: {stats['malicious']}\033[0m")
-        print(f"\033[93mEngines that flag it as suspecious: {stats['suspicious']}\033[0m")
-        print(f"\033[92mEngines that flag it as safe: {stats['undetected']}\033[0m")
+        print(f"\033[91mEngines that flag the file as malware: {stats['malicious']}\033[0m")
+        print(f"\033[93mEngines that flag the file as suspecious: {stats['suspicious']}\033[0m")
+        print(f"\033[92mEngines that flag the file as safe: {stats['undetected']}\033[0m")
         print("="*40 + "\n")
 
     elif response.status_code == 404:
@@ -117,7 +116,7 @@ def regex_analysis(extracted_text):
     # Some versioning in apps could be detected as IP adresses, here is a list of the most common
     false_positives = ['0.0.0.0', '0.0.0.1', '1.0.0.0', '1.1.0.0', '1.1.1.0', '1.1.1.1', '2.0.0.0', '3.0.0.0', '4.0.0.0', '5.0.0.0', '6.0.0.0', '7.0.0.0', '8.0.0.0']
     clean_ips = []
-    url_format = r"https?://[a-zA-Z0-9\-\.\/\_]+"
+    url_format = r"https?://[a-zA-Z0-9\-\.\/\_\?\=\&]+"
     dll_format = r"[a-zA-Z0-9\-_]+\.dll"
 
     print("To avoid fatal missclicks all URLs and IPs we will be defanged (dots as * and hxxp instead of http) \n")
@@ -143,18 +142,23 @@ def regex_analysis(extracted_text):
     # regex detection of DLLs
     dlls = re.findall(dll_format, extracted_text, re.IGNORECASE)
 
-    print("="*40)
+    print("=" * 40)
     print()
     print("\033[1mThis file possibly connects to the IP(s):\033[0m")
-    print(list(set(defanged_ips)))
+    for ip in sorted(set(defanged_ips)):
+        print(f"  • {ip}")
     print()
+
     print("\033[1mThis file possibly connects to the URL(s):\033[0m")
-    print(list(set(defanged_urls)))
+    for url in sorted(set(defanged_urls)):
+        print(f"  • {url}")
     print()
+
     print("\033[1mThis file possibly uses the DLL(s):\033[0m")
-    print(list(set(dlls)))
+    for dll in sorted(set(dlls)):
+        print(f"  • {dll}")
     print()
-    print("="*40)
+    print("=" * 40)
 
 if __name__ == "__main__":
     main()

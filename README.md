@@ -1,5 +1,36 @@
 ﻿# StaticAnalyst
-This is a Python script that reads executable files to find possibly malicious URLs/IPs and suspicious DLL loads
+StaticAnalyst is a Python script that reads executable files to find possibly malicious URLs/IPs connections and suspicious DLL loads. It also computes the hash of the executable to cross reference it with VirusTotal's database.
+
+## Requirements
+
+To run StaticAnalist successfully, you need:
+
+* **Operating System:** Windows 10 or 11.
+* **Python:** Version 3.8 or higher installed on your system (make sure to check **"Add Python to PATH"** during installation).
+* **Python Library:** 
+  * `requests` (automatically checked and installed when using the `.bat` launcher).
+
+## How to run
+
+### Easy way
+Double click on StaticAnalist.bat, this native windows script will automatically check your dependencies and will run the python script itself
+
+### Hard way
+1. Make sure you have **Python** installed on your system.
+2. Clone this repository or download the source code:
+   ```bash
+   git clone <tu-repositorio-url>
+   cd StaticAnalist
+   ```
+
+3. Install the required dependencies:
+   ```bash
+   pip install requests
+   ```
+4. Run the script:
+   ```bash
+   python main.py
+   ```
 
 ## What is VirusTotal API and how to get an API Key?
 
