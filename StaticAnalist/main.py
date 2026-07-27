@@ -1,4 +1,6 @@
 import hashlib
+import ipaddress
+import re
 import tkinter as tk
 from tkinter import filedialog
 
@@ -12,7 +14,7 @@ def main():
     # Hide tkinter's deafult empty screen 
     root.withdraw() 
 
-    print("Opening file selection screen...")
+    print("\nOpening file selection screen...")
     # Launch the file selector
     filepath = filedialog.askopenfilename(
         title="Select the suspecious file",
@@ -31,9 +33,11 @@ def main():
             Virustotal_hash_analysis(file_hash, vt_key)
         else:
             print(" [-] VirusTotal analysis skipped.")
+    
         print("\n" + "="*40)
-        print("Static analysis staring...\n")
-        print(text_extractor(filepath))
+        print("\nStatic analysis starting...\n")
+        extracted_text = text_extractor(filepath)
+        regex_analysis(extracted_text)
         
 
     else:
@@ -83,8 +87,8 @@ def Virustotal_hash_analysis(hash, api_key):
     else:
         print(f"\n[-] An unexpected error occurred. HTTP Code: {response.status_code}")
 
+# This method extracts the raw text from the .exe file and filters invisible characters
 def text_extractor(filepath):
-
     extracted_tmp = ""
     extracted_text = ""
 
@@ -106,9 +110,51 @@ def text_extractor(filepath):
                         extracted_tmp = ""                
         return extracted_text
 
+# This method analyzes the extracted text to find relevant info throgh regular expressions
+def regex_analysis(extracted_text):
 
-    
+    ip_format = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
+    # Some versioning in apps could be detected as IP adresses, here is a list of the most common
+    false_positives = ['0.0.0.0', '0.0.0.1', '1.0.0.0', '1.1.0.0', '1.1.1.0', '1.1.1.1', '2.0.0.0', '3.0.0.0', '4.0.0.0', '5.0.0.0', '6.0.0.0', '7.0.0.0', '8.0.0.0']
+    clean_ips = []
+    url_format = r"https?://[a-zA-Z0-9\-\.\/\_]+"
+    dll_format = r"[a-zA-Z0-9\-_]+\.dll"
 
+    print("To avoid fatal missclicks all URLs and IPs we will be defanged (dots as * and hxxp instead of http) \n")
+    print("WARNING: This script can mistake versions of apps with IPs, for example 1.3.5.4 is likely a version, however it will be detected as an IP\n")
+
+    # regex detection of IPs trying to avoid false postives + defang
+    ips = re.findall(ip_format, extracted_text, re.IGNORECASE)
+    for ip in ips:
+        if ip not in false_positives:
+            try:
+                # Check wether the IP mathematically exsists (numbers don't exceed 255)
+                ipaddress.IPv4Address(ip)
+                clean_ips.append(ip)
+            except ipaddress.AddressValueError:
+                # If it fails (for example 300.1.1.1), ignore and pass to the next one
+                pass
+    defanged_ips = [ip.replace(".", "*") for ip in clean_ips]
+
+    # regex detection of URL + defang
+    urls = re.findall(url_format, extracted_text, re.IGNORECASE)
+    defanged_urls = [url.replace("http", "hxxp").replace(".", "*") for url in urls]
+
+    # regex detection of DLLs
+    dlls = re.findall(dll_format, extracted_text, re.IGNORECASE)
+
+    print("="*40)
+    print()
+    print("\033[1mThis file possibly connects to the IP(s):\033[0m")
+    print(list(set(defanged_ips)))
+    print()
+    print("\033[1mThis file possibly connects to the URL(s):\033[0m")
+    print(list(set(defanged_urls)))
+    print()
+    print("\033[1mThis file possibly uses the DLL(s):\033[0m")
+    print(list(set(dlls)))
+    print()
+    print("="*40)
 
 if __name__ == "__main__":
     main()
