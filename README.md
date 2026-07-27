@@ -82,3 +82,11 @@ This project integrates the **VirusTotal Public API** to cross-reference the has
 * **Intellectual Property:** All information regarding reputation, antivirus detections, and verdicts displayed by this script over the network belongs to VirusTotal and its respective partner scanning engines. 
 
 For more information, please refer to the [VirusTotal Terms of Service](https://docs.virustotal.com/docs/terms-of-service).
+
+**Apart from the optional VirusTotal API integration, everything else in StaticAnalyst is 100% free to use anywhere, including for commercial, profitable, or enterprise environments.**
+
+## Show Your Support!
+
+If you find **StaticAnalyst** useful, please consider giving it a **Star** on GitHub! It helps the project gain visibility and motivates further development.
+
+Feel free to open an **Issue** if you find a bug or have a feature request!
