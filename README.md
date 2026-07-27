@@ -19,7 +19,7 @@ Double click on StaticAnalist.bat, this native windows script will automatically
 1. Make sure you have **Python** installed on your system.
 2. Clone this repository or download the source code:
    ```bash
-   git clone <tu-repositorio-url>
+   git clone https://github.com/MM-Manuel/StaticAnalyst.git
    cd StaticAnalist
    ```
 

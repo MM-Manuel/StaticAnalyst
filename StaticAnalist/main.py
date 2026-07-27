@@ -109,30 +109,50 @@ def text_extractor(filepath):
                         extracted_tmp = ""                
         return extracted_text
 
+# This method filters out IP addresses that look like software version numbers or noise
+def check_ip_false_positive(ip):
+    # List of the most likely false positive IPs
+    false_positives = ['0.0.0.0', '0.0.0.1', '1.0.0.0', '1.1.0.0', '1.1.1.0', '1.1.1.1', '2.0.0.0', '3.0.0.0', '4.0.0.0', '5.0.0.0', '6.0.0.0', '7.0.0.0', '8.0.0.0', '9.0.0.0']
+    
+    if ip in false_positives:
+        return True
+        
+    parts = ip.split('.')
+    
+    # Version-like combinations, like X.Y.0.0 or X.0.0.0
+    if parts[2] == '0' and parts[3] == '0':
+        return True  # Ex. 1.3.0.0
+    if parts[1] == '0' and parts[2] == '0' and parts[3] == '0':
+        return True  # Ex. 2.0.0.0
+    if parts[1] == '0' and parts[2] == '0' and (0 <= int(parts[0]) <= 10) and (0 <= int(parts[3]) <= 10):
+        return True  # Ex. 1.0.0.1, 2.0.0.5, etc.
+    if parts[0] == '0': #Ex. 0.2.5.1 # noqa: SIM103
+        return True  # All invalid IPs that start with 0
+    
+    return False
+
 # This method analyzes the extracted text to find relevant info throgh regular expressions
 def regex_analysis(extracted_text):
 
     ip_format = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
     # Some versioning in apps could be detected as IP adresses, here is a list of the most common
-    false_positives = ['0.0.0.0', '0.0.0.1', '1.0.0.0', '1.1.0.0', '1.1.1.0', '1.1.1.1', '2.0.0.0', '3.0.0.0', '4.0.0.0', '5.0.0.0', '6.0.0.0', '7.0.0.0', '8.0.0.0']
     clean_ips = []
     url_format = r"https?://[a-zA-Z0-9\-\.\/\_\?\=\&]+"
     dll_format = r"[a-zA-Z0-9\-_]+\.dll"
 
     print("To avoid fatal missclicks all URLs and IPs we will be defanged (dots as * and hxxp instead of http) \n")
-    print("WARNING: This script can mistake versions of apps with IPs, for example 1.3.5.4 is likely a version, however it will be detected as an IP\n")
+    print("WARNING: This script can mistake versions of apps with IPs, for example 1.3.5.4 is likely a version, however it will be detected as an IP because IT COULD BE a real IP\n")
 
-    # regex detection of IPs trying to avoid false postives + defang
+    # regex detection of IPs trying to avoid false positives + defang
     ips = re.findall(ip_format, extracted_text, re.IGNORECASE)
     for ip in ips:
-        if ip not in false_positives:
-            try:
-                # Check wether the IP mathematically exsists (numbers don't exceed 255)
-                ipaddress.IPv4Address(ip)
+        try:
+            # Check whether the IP mathematically exists (numbers don't exceed 255)
+            ipaddress.IPv4Address(ip)
+            if not check_ip_false_positive(ip):
                 clean_ips.append(ip)
-            except ipaddress.AddressValueError:
-                # If it fails (for example 300.1.1.1), ignore and pass to the next one
-                pass
+        except ipaddress.AddressValueError:
+            pass
     defanged_ips = [ip.replace(".", "*") for ip in clean_ips]
 
     # regex detection of URL + defang
