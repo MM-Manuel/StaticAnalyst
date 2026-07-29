@@ -1,5 +1,7 @@
 import hashlib
 import ipaddress
+import json
+import os
 import re
 import tkinter as tk
 from tkinter import filedialog
@@ -38,6 +40,8 @@ def main():
         print("\nStatic analysis starting...\n")
         extracted_text = text_extractor(filepath)
         regex_analysis(extracted_text)
+        behavioural_assesment(extracted_text)
+        
 
     else:
         print("Analysis cancelled: no file selected.")
@@ -134,10 +138,14 @@ def check_ip_false_positive(ip):
 # This method analyzes the extracted text to find relevant info throgh regular expressions
 def regex_analysis(extracted_text):
 
+    # IPs regular expressions
     ip_format = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
-    # Some versioning in apps could be detected as IP adresses, here is a list of the most common
     clean_ips = []
+
+    # URLs regular expressions
     url_format = r"https?://[a-zA-Z0-9\-\.\/\_\?\=\&]+"
+
+    # DLLs regular expressions
     dll_format = r"[a-zA-Z0-9\-_]+\.dll"
 
     print("To avoid fatal missclicks all URLs and IPs we will be defanged (dots as * and hxxp instead of http) \n")
@@ -177,6 +185,112 @@ def regex_analysis(extracted_text):
     print("\033[1mThis file possibly uses the DLL(s):\033[0m")
     for dll in sorted(set(dlls)):
         print(f"  • {dll}")
+    print()
+
+    print("=" * 40)
+
+# This methods loads the JSON containing the signatures
+def load_signatures():
+    signatures_path = os.path.join(os.path.dirname(__file__), "signatures.json")
+
+    if not os.path.exists(signatures_path):
+        print("\n [ERROR] The file signature.json does not exists or it is not inside the folder 'StaticAnalist'")
+        return
+
+    try:
+        with open(signatures_path, "r", encoding="utf-8") as file:
+            return json.load(file)
+    except (json.JSONDecodeError, OSError, UnicodeError) as e:
+        # JSON parsing errors, file I/O errors or encoding issues
+        print(f"The file exists but could not be opened/read: {e}")
+        return None
+
+def colorize_risk(risk_level):
+    # Diccionario con los colores ANSI
+    colors = {
+        "HIGH": "\033[91mHIGH\033[0m",                 # Texto rojo
+        "MEDIUM": "\033[93mMEDIUM\033[0m",             # Texto amarillo
+        "LOW": "\033[92mLOW\033[0m",                   # Texto verde
+    }
+    # Si el nivel no está en el diccionario, lo devuelve en blanco por defecto
+    return colors.get(risk_level.upper(), f"\033[97m{risk_level}\033[0m")
+
+def behavioural_assesment(extracted_text):
+
+    signatures = load_signatures()
+
+    if not signatures:
+        print("No signatures found")
+        return
+
+    text_lower = extracted_text.lower()
+    detected_flags = []
+    detected_combos = []
+
+    # Here we check what suspicious windows APIs are being called in the executable
+    winapis = signatures.get("winapis", {})
+    for api_name, details in winapis.items():
+        if api_name in extracted_text:
+            risk = details.get("risk", "No risk level provided")
+            desc = details.get("description", "No description provided")
+            detected_flags.append((risk,f"API: {api_name}",desc))
+
+    # Here we check what suspicious commands are present in the executable
+    cmds = signatures.get("suspicious_commands", {})
+    for command_name, details in cmds.items():
+        if command_name in extracted_text:
+            risk = details.get("risk", "No risk level provided")
+            desc = details.get("description", "No description provided")
+            detected_flags.append((risk,f"API: {command_name}",desc))
+
+    combos = signatures.get("threat_combos", [])
+    for combo in combos:
+        reqs = combo.get("requires", [])
+        reqanyof = combo.get("requires_any_of", [])
+
+        # Check if all required items are present
+        has_all_reqs = True
+        if reqs:
+            has_all_reqs = all(req in extracted_text or req.lower() in text_lower for req in reqs)
+            
+        # Check if at least one of the 'any of' items is present (only if the list is not empty)
+        has_any_req = True
+        if reqanyof:
+            has_any_req = any(req in extracted_text or req.lower() in text_lower for req in reqanyof)
+            
+        # If both conditions are met, we have a match!
+        if has_all_reqs and has_any_req:
+            # Use 'verdict' instead of 'assesment' to match JSON
+            detected_combos.append((combo["risk"], combo["name"], combo["verdict"], reqs, reqanyof))
+        
+    # Print all the results
+    print("\n\033[1mBehavioral Assessment & Red Flags:\033[0m")
+    print("\n\033[93m[!] WARNING: This assessment is based on static string extraction and signature matching. The presence of these APIs or commands in the binary does not guarantee they are actually executed and legitimate software may also use them. Consider this a triage/informative tool, not a definitive verdict. \033[1m(NOTE: THE FILE COULD BE PACKED OR OBFUSCATED). \033[0m\n")
+
+    if not detected_flags and not detected_combos:
+        print("\033[92m[+] No suspicious behavioural patterns or combinations found and no individual red flags were found.\033[0m\n")
+        return
+
+    # Print the suspicious combinations of behaviours
+    if detected_combos:
+        print("  \033[91m[!] SUSPICIOUS BEHAVIOUR DETECTED:\033[0m\n")
+        for risk, name, verdict, reqs, reqanyof in detected_combos:
+            c_risk = colorize_risk(risk)
+            print(f"  • Risk level: [{c_risk}] Name: {name}")
+            print(f"    Verdict: {verdict}")
+            # Format requirements beautifully 
+            req_str = ", ".join(reqs) if reqs else "None"
+            any_str = ", ".join(reqanyof) if reqanyof else "None"
+            print(f"    Matched triggers: Requires({req_str}) | Requires Any({any_str})\n")
+    else:
+        print("\033[92m[+] No suspicious behavioural patterns or combinations found.\033[0m\n")
+
+    # Print the individual suspicious commands or api calls
+    print("Potentially Suspicious Individual Calls:\n")
+    for risk, flag, desc in detected_flags:
+        c_risk = colorize_risk(risk)
+        print(f"  • Risk level: [{c_risk}] {flag}\n    Description: {desc}\n")
+    print("\n\033[90m* NOTE: These can be abused by malware, but are also commonly used by legitimate harmless software. *\033[0m")
     print()
     print("=" * 40)
 

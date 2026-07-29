@@ -1,0 +1,266 @@
+{
+    "winapis": {
+        "VirtualAllocEx": {
+            "risk": "HIGH",
+            "description": "Memory allocation in an external process (Process Injection)"
+        },
+        "WriteProcessMemory": {
+            "risk": "HIGH",
+            "description": "Writing data into an external process space"
+        },
+        "CreateRemoteThread": {
+            "risk": "HIGH",
+            "description": "Code execution inside another process"
+        },
+        "SetWindowsHookExA": {
+            "risk": "MEDIUM",
+            "description": "System-wide keyboard/mouse hook (Keylogger behavior)"
+        },
+        "CryptUnprotectData": {
+            "risk": "MEDIUM",
+            "description": "DPAPI decryption (Credential stealer behavior)"
+        },
+        "SetWindowsHookEx": {
+            "risk": "MEDIUM",
+            "description": "Installs a system-wide event hook (Classic keylogger / input interception mechanism)"
+        },
+        "GetClipboardData": {
+            "risk": "MEDIUM",
+            "description": "Retrieves clipboard contents (Monitors copied passwords, text, or crypto wallet addresses)"
+        },
+        "FtpPutFile": {
+            "risk": "MEDIUM",
+            "description": "Uploads local files to a remote FTP server (Data exfiltration channel)"
+        },
+        "GetKeyboardState": {
+            "risk": "MEDIUM",
+            "description": "Retrieves the status of all virtual keys (Full keyboard activity capture)"
+        },
+        "GetAsyncKeyState": {
+            "risk": "LOW",
+            "description": "Checks the state of a specific virtual key (Asynchronous keystroke monitoring)"
+        },
+        "IsDebuggerPresent": {
+            "risk": "LOW",
+            "description": "Anti-debugging check (Evasion technique)"
+        },
+        "GetKeyNameText": {
+            "risk": "LOW",
+            "description": "Translates key codes into readable text (Converts pressed keys into human-readable logs)"
+        },
+        "URLDownloadToFileW": {
+            "risk": "HIGH",
+            "description": "Downloads a file from the internet (Dropper/Downloader behavior)"
+        },
+        "URLDownloadToFileA": {
+            "risk": "HIGH",
+            "description": "Downloads a file from the internet (Dropper/Downloader behavior)"
+        },
+        "HttpSendRequestA": {
+            "risk": "MEDIUM",
+            "description": "Sends an HTTP request to a server (C2 communication or data exfiltration)"
+        },
+        "ResumeThread": {
+            "risk": "MEDIUM",
+            "description": "Resumes a suspended thread (Often used in Process Hollowing)"
+        },
+        "NtUnmapViewOfSection": {
+            "risk": "HIGH",
+            "description": "Unmaps a view of a section (Classic Process Hollowing technique)"
+        },
+        "RegSetValueExA": {
+            "risk": "MEDIUM",
+            "description": "Sets data in the registry (Used for persistence or changing system settings)"
+        },
+        "RegCreateKeyExA": {
+            "risk": "MEDIUM",
+            "description": "Creates a new registry key (Used for persistence)"
+        },
+        "ShellExecuteA": {
+            "risk": "LOW",
+            "description": "Executes a program or opens a file (Used to run payloads)"
+        },
+        "CreateProcessA": {
+            "risk": "LOW",
+            "description": "Creates a new process and its primary thread (Execution)"
+        },
+        "GetTickCount": {
+            "risk": "LOW",
+            "description": "Retrieves system uptime (Used in timing attacks to bypass sandboxes)"
+        },
+        "FindWindowA": {
+            "risk": "LOW",
+            "description": "Searches for a specific window (Used to check for analysis tools like Wireshark/Process Hacker)"
+        },
+        "CryptAcquireContextA": {
+            "risk": "MEDIUM",
+            "description": "Acquires a handle to a key container (Used by Ransomware for encryption setup)"
+        },
+        "CryptEncrypt": {
+            "risk": "HIGH",
+            "description": "Encrypts data (Core Ransomware behavior when combined with file enumeration)"
+        }
+    },
+    "suspicious_commands": {
+        "vssadmin": {
+            "risk": "HIGH",
+            "description": "Shadow copy manipulation utility (Often used by Ransomware)"
+        },
+        "delete shadows": {
+            "risk": "HIGH",
+            "description": "Attempts to wipe Windows backup shadow copies"
+        },
+        "wmic": {
+            "risk": "MEDIUM",
+            "description": "Windows Management Instrumentation Command-line (Used for lateral movement or recon)"
+        },
+        "shadowcopy delete": {
+            "risk": "HIGH",
+            "description": "WMI command to delete shadow copies (Ransomware behavior)"
+        },
+        "powershell": {
+            "risk": "MEDIUM",
+            "description": "PowerShell execution detected"
+        },
+        "-encodedcommand": {
+            "risk": "MEDIUM",
+            "description": "Obfuscated Base64 PowerShell argument"
+        },
+        "certutil": {
+            "risk": "MEDIUM",
+            "description": "Native utility often abused to download external payloads"
+        },
+        "-urlcache": {
+            "risk": "MEDIUM",
+            "description": "Certutil flag used for remote file downloading"
+        },
+        "bitsadmin": {
+            "risk": "MEDIUM",
+            "description": "Background Intelligent Transfer Service (Abused to download payloads silently)"
+        },
+        "/transfer": {
+            "risk": "HIGH",
+            "description": "Bitsadmin flag used for malicious file transfers"
+        },
+        "schtasks": {
+            "risk": "MEDIUM",
+            "description": "Task Scheduler utility (Used to establish persistence)"
+        },
+        "/create": {
+            "risk": "LOW",
+            "description": "Creation flag (Often used with schtasks or services)"
+        },
+        "set-mppreference": {
+            "risk": "HIGH",
+            "description": "PowerShell cmdlet used to modify Windows Defender settings"
+        },
+        "disablerealtimemonitoring": {
+            "risk": "HIGH",
+            "description": "Attempts to disable Windows Defender Real-Time Protection"
+        },
+        "netsh advfirewall": {
+            "risk": "HIGH",
+            "description": "Attempts to modify or disable the Windows Firewall"
+        },
+        "taskkill": {
+            "risk": "MEDIUM",
+            "description": "Forcefully terminates a process (Used to kill AVs or analysis tools)"
+        },
+        "currentversion\\run": {
+            "risk": "MEDIUM",
+            "description": "Attempts to establish auto-start persistence in the Registry"
+        }
+    },
+    "threat_combos": [
+        {
+            "name": "Process Injection / Process Hollowing",
+            "risk": "HIGH",
+            "requires": [
+                "VirtualAllocEx",
+                "WriteProcessMemory",
+                "CreateRemoteThread"
+            ],
+            "verdict": "Trojan / Payload Injector Behaviour (Attempts to hide malicious code inside legitimate processes)"
+        },
+        {
+            "name": "Advanced Process Hollowing",
+            "risk": "HIGH",
+            "requires": [
+                "CreateProcessA",
+                "NtUnmapViewOfSection",
+                "ResumeThread"
+            ],
+            "verdict": "Payload Injector Behaviour (Unmaps legitimate memory and replaces it with malicious code)"
+        },
+        {
+            "name": "Active Keylogger & Exfiltration",
+            "risk": "HIGH",
+            "requires_any_of": [
+                "SetWindowsHookEx",
+                "SetWindowsHookExA",
+                "GetAsyncKeyState"
+            ],
+            "requires": [
+                "FtpPutFile"
+            ],
+            "verdict": "Spyware Behaviour (Intercepts keystrokes and exfiltrates them remotely)"
+        },
+        {
+            "name": "Clipboard Stealer & Exfiltration",
+            "risk": "HIGH",
+            "requires": [
+                "GetClipboardData",
+                "FtpPutFile"
+            ],
+            "verdict": "Infostealer / Crypto Clipper Behaviour (Steals copied passwords/data and uploads them)"
+        },
+        {
+            "name": "Ransomware Behavior (VSSADMIN)",
+            "risk": "HIGH",
+            "requires": [
+                "vssadmin",
+                "delete shadows"
+            ],
+            "verdict": "Ransomware Behaviour (Attempts to wipe Windows backup shadow copies via vssadmin to prevent recovery)"
+        },
+        {
+            "name": "Ransomware Behavior (WMIC)",
+            "risk": "HIGH",
+            "requires": [
+                "wmic",
+                "shadowcopy delete"
+            ],
+            "verdict": "Ransomware Behaviour (Attempts to wipe Windows backup shadow copies via WMI to prevent recovery)"
+        },
+        {
+            "name": "Defense Impairment (Defender Disable)",
+            "risk": "HIGH",
+            "requires": [
+                "powershell",
+                "disablerealtimemonitoring"
+            ],
+            "verdict": "Defense Impairment (Attempts to permanently disable Windows Defender Antivirus)"
+        },
+        {
+            "name": "Dropper / Payload Downloader",
+            "risk": "HIGH",
+            "requires_any_of": [
+                "URLDownloadToFileW",
+                "URLDownloadToFileA",
+                "-urlcache",
+                "bitsadmin"
+            ],
+            "requires": [],
+            "verdict": "Dropper Behaviour (Contains functions used to fetch secondary malicious payloads from the internet)"
+        },
+        {
+            "name": "System Persistence (Registry)",
+            "risk": "MEDIUM",
+            "requires": [
+                "RegCreateKeyExA",
+                "RegSetValueExA"
+            ],
+            "verdict": "Persistence Mechanism (Attempts to write keys to the Windows Registry to survive reboots)"
+        }
+    ]
+}

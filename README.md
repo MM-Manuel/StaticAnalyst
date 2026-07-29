@@ -1,5 +1,5 @@
 ﻿# StaticAnalyst
-StaticAnalyst is a Python script that reads executable files to find possibly malicious URLs/IPs connections and suspicious DLL loads. It also computes the hash of the executable to cross reference it with VirusTotal's database.
+**StaticAnalyst** is a Python script designed to perform static analysis on executable files. It extracts potentially malicious URLs, IP addresses, and DLL loads, while using a built-in (but expandable/cutomizable) behavioral assessment (`signatures.json`) to detect high-risk Windows APIs, suspicious commands, and known threat combinations (like Ransomware, Keyloggers, or Process Injection). Additionally, it computes the file's hash to automatically cross-reference it with VirusTotal's database. You can test detection through (`TestExeFile.dll`) it should raise certain flags and suspicious behaviours indicators (this file is just plain text with a dll extension, it can't be executed)
 
 ## Requirements
 
@@ -83,7 +83,7 @@ This project integrates the **VirusTotal Public API** to cross-reference the has
 
 For more information, please refer to the [VirusTotal Terms of Service](https://docs.virustotal.com/docs/terms-of-service).
 
-**Apart from the optional VirusTotal API integration, everything else in StaticAnalyst is 100% free to use anywhere, including for commercial, profitable, or enterprise environments.**
+**Apart from the optional VirusTotal API integration, everything else in StaticAnalyst is 100% free to use, expand and customize anywhere, including for commercial, profitable, or enterprise environments.**
 
 ## Show Your Support!
 
