@@ -21,8 +21,8 @@ pip install requests pyinstaller --quiet
 
 cls
 echo ========================================
-echo   Starting StaticAnalist ...
+echo   Starting StaticAnalyst ...
 echo ========================================
-python .\StaticAnalist\main.py
+python .\StaticAnalyst\main.py
 
 pause

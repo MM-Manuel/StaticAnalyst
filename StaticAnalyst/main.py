@@ -194,7 +194,7 @@ def load_signatures():
     signatures_path = os.path.join(os.path.dirname(__file__), "signatures.json")
 
     if not os.path.exists(signatures_path):
-        print("\n [ERROR] The file signature.json does not exists or it is not inside the folder 'StaticAnalist'")
+        print("\n [ERROR] The file signature.json does not exists or it is not inside the folder 'StaticAnalyst'")
         return
 
     try:

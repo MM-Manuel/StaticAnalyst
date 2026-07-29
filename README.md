@@ -3,7 +3,7 @@
 
 ## Requirements
 
-To run StaticAnalist successfully, you need:
+To run StaticAnalyst successfully, you need:
 
 * **Operating System:** Windows 10 or 11.
 * **Python:** Version 3.8 or higher installed on your system (make sure to check **"Add Python to PATH"** during installation).
@@ -13,14 +13,14 @@ To run StaticAnalist successfully, you need:
 ## How to run
 
 ### Easy way
-Double click on StaticAnalist.bat, this native windows script will automatically check your dependencies and will run the python script itself
+Double click on StaticAnalyst.bat, this native windows script will automatically check your dependencies and will run the python script itself
 
 ### Hard way
 1. Make sure you have **Python** installed on your system.
 2. Clone this repository or download the source code:
    ```bash
    git clone https://github.com/MM-Manuel/StaticAnalyst.git
-   cd StaticAnalist
+   cd StaticAnalyst
    ```
 
 3. Install the required dependencies:
