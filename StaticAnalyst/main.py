@@ -77,7 +77,7 @@ def Virustotal_hash_analysis(hash, api_key):
         print("="*40)
         # \033[91m is red text, \033[93m yellow, \033[92m green and \033[0m is to take it back to normal
         print(f"\033[91mEngines that flag the file as malware: {stats['malicious']}\033[0m")
-        print(f"\033[93mEngines that flag the file as suspecious: {stats['suspicious']}\033[0m")
+        print(f"\033[93mEngines that flag the file as suspicious: {stats['suspicious']}\033[0m")
         print(f"\033[92mEngines that flag the file as safe: {stats['undetected']}\033[0m")
         print("="*40 + "\n")
 
@@ -90,27 +90,25 @@ def Virustotal_hash_analysis(hash, api_key):
     else:
         print(f"\n[-] An unexpected error occurred. HTTP Code: {response.status_code}")
 
-# This method extracts the raw text from the .exe file and filters invisible characters
+# This method extracts the strings from the executable file and filters invisible characters
 def text_extractor(filepath):
-    extracted_tmp = ""
     extracted_text = ""
 
     # Read file in binary mode
     with open(filepath, 'rb') as file:
-        # Divide the file in 8Kb chunks
-        while chunk := file.read(8192):
-            for byte in chunk:
-                # This checks if a byte is an ascii printable character to avoid
-                # unnecesary checks and errors in weird invisible chararacters
-                if(32 <= byte <= 126):
-                    extracted_tmp += chr(byte)
-                else:
-                    # If the current set of chars is less than 4 chars long is probably irrelevant
-                    if(len(extracted_tmp) < 4):
-                        extracted_tmp = ""
-                    else:
-                        extracted_text += extracted_tmp + "\n"
-                        extracted_tmp = ""                
+        data = file.read()
+
+        # Extract all ascii strings (b'[ -~]{4,}' looks for bytes from 32 to 126 and more that 4 chars together)
+        ascii_regex = b'[ -~]{4,}'
+        for match in re.finditer(ascii_regex, data):
+            extracted_text += match.group().decode('ascii', errors='ignore') + "\n"
+
+        # Extract utf-16 strings (same byte-range as ascii but always followed by x00)
+        utf16_pattern = b'(?:[\x20-\x7E]\x00){4,}'
+        for match in re.finditer(utf16_pattern, data):
+            # Decodify the byte block as utf-16le
+            extracted_text += match.group().decode('utf-16le', errors='ignore') + "\n"
+
         return extracted_text
 
 # This method filters out IP addresses that look like software version numbers or noise
@@ -194,7 +192,7 @@ def load_signatures():
     signatures_path = os.path.join(os.path.dirname(__file__), "signatures.json")
 
     if not os.path.exists(signatures_path):
-        print("\n [ERROR] The file signature.json does not exists or it is not inside the folder 'StaticAnalyst'")
+        print("\n [ERROR] The file signatures.json does not exists or it is not inside the folder 'StaticAnalyst'")
         return
 
     try:
